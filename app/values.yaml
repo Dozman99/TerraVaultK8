@@ -1,0 +1,18 @@
+env:      # to set the secret as an environmental variable
+  create: true
+
+
+project_name: "test" #project
+
+serviceAccount:
+  name: "dozservice"
+secretProviderClass:
+  name: "dozspc"
+deployment:
+  replicas: "2"   #replicas: {{- default "1" .Values.deployment.replicas | trimSuffix "-" }}
+
+  name: "dozdeploy"
+
+#  NOT TALKED ABOUT
+
+    # roleName: "database"

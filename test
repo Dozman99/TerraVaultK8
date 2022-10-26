@@ -1,0 +1,24 @@
+
+mkdir manifests
+
+helm template assign-chart ./app \
+  --namespace default \
+  --version 0.39.0 \
+  -f ./app/values.yaml \
+  > ./consul.yaml
+
+
+  
+mkdir manifests
+
+helm template csi secrets-store-csi-driver/secrets-store-csi-driver\
+  --namespace vault \
+  --set "syncSecret.enabled=true"\
+  --set "enableSecretRotation=true"\
+  > ./manifests/consul.yaml
+
+vault write auth/kubernetes/role/money \
+    bound_service_account_names=webapp-sa \
+    bound_service_account_namespaces=default \
+    policies=internal-app \
+    ttl=20m

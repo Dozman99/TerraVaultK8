@@ -1,0 +1,65 @@
+---
+# Source: assign-vault-terraform-helm/templates/app_permitted_sa.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: assign-chart-sa
+  namespace: default
+---
+# Source: assign-vault-terraform-helm/templates/app_deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: assign-chart-deploy
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      serviceAccountName: assign-chart-sa
+      terminationGracePeriodSeconds: 0
+      containers:
+      - image: docker.mirror.hashicorp.services/nginx
+        name: nginx
+        env:
+        - name: SECRET_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: foosecret
+              key: username
+        volumeMounts:
+        - name: secrets-store-inline
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+      volumes:
+          - name: secrets-store-inline
+            csi:
+              driver: secrets-store.csi.k8s.io
+              readOnly: true
+              volumeAttributes:
+                secretProviderClass: assign-chart-spc
+---
+# Source: assign-vault-terraform-helm/templates/vault_spc.yaml
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  namespace: default
+  name: assign-chart-spc
+  
+spec:
+  provider: vault                         
+  parameters:
+    vaultAddress: "http://vault.default:8200"
+    roleName: "database"
+    objects: |
+      - objectName: "db-password"
+        secretPath: "secret/data/db-pass"
+        secretKey: password
